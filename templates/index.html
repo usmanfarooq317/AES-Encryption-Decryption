@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AES Encryption &amp; Decryption Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#dfe7f2;            /* page background - soft steel blue */
+    --nav:#d2dcec;           /* navbar */
+    --card:#ebf0f8;          /* panels / cards */
+    --field:#f3f6fb;         /* inputs */
+    --field-focus:#f7f9fd;
+    --tint:#e3e9f3;          /* small chips / output header */
+    --border:#cdd7e6;
+    --border-strong:#b9c5d8;
+    --text:#14213d;
+    --text-2:#33415c;
+    --muted:#5f6f8a;
+
+    --enc:#0d9488;           /* teal  - encryption */
+    --enc-dark:#0f766e;
+    --enc-soft:#d4efeb;
+    --enc-head:#dcefee;
+    --enc-ring:rgba(13,148,136,.18);
+
+    --dec:#4f46e5;           /* indigo - decryption */
+    --dec-dark:#4338ca;
+    --dec-soft:#dfe0fa;
+    --dec-head:#e2e3f8;
+    --dec-ring:rgba(79,70,229,.18);
+
+    --ok:#15803d;
+    --ok-soft:#d6f0de;
+    --danger:#c62828;
+    --danger-soft:#fbe3e3;
+
+    --radius:14px;
+    --shadow:0 1px 2px rgba(20,33,61,.06),0 10px 26px -14px rgba(20,33,61,.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+    background:
+      radial-gradient(900px 420px at 0% 0%, #d3ece8 0%, transparent 55%),
+      radial-gradient(900px 420px at 100% 0%, #dcdcf6 0%, transparent 55%),
+      var(--bg);
+  }
+
+  /* ---------- Navbar ---------- */
+  nav{background:var(--nav);border-bottom:1px solid var(--border)}
+  .nav-inner{
+    max-width:1140px;margin:0 auto;padding:12px 28px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:1rem;color:var(--text)}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#14b8a6,#6366f1);
+  }
+  .nav-badge{
+    font-size:.75rem;font-weight:600;color:var(--ok);background:var(--ok-soft);
+    padding:5px 11px;border-radius:999px;display:flex;align-items:center;gap:7px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+
+  /* ---------- Title ---------- */
+  .title{max-width:1140px;margin:0 auto;padding:26px 28px 18px;text-align:center}
+  .title h1{font-size:1.65rem;font-weight:800;letter-spacing:-.025em}
+  .title h1 span{
+    background:linear-gradient(90deg,var(--enc),var(--dec));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .title p{color:var(--muted);margin-top:4px;font-size:.92rem}
+
+  /* ---------- Settings ---------- */
+  .settings{max-width:1140px;margin:0 auto;padding:0 28px}
+  .settings-grid{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    display:grid;grid-template-columns:repeat(5,1fr);
+  }
+  .setting{padding:10px 18px;border-right:1px solid var(--border)}
+  .setting:last-child{border-right:none}
+  .setting .k{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .setting .v{font-size:.9rem;font-weight:700;color:var(--text)}
+
+  /* ---------- Tabs (mobile) ---------- */
+  .tabs{display:none;max-width:1140px;margin:18px auto 0;padding:0 28px;gap:8px}
+  .tab{
+    flex:1;padding:10px;border:1px solid var(--border);background:var(--card);
+    border-radius:10px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;
+  }
+  .tab.active[data-target="encPanel"]{background:var(--enc);border-color:var(--enc);color:#fff}
+  .tab.active[data-target="decPanel"]{background:var(--dec);border-color:var(--dec);color:#fff}
+
+  /* ---------- Panels ---------- */
+  main{
+    max-width:1140px;margin:18px auto 0;padding:0 28px;
+    display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;
+  }
+  .panel{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+  }
+  .panel-head{padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+  .enc .panel-head{background:var(--enc-head)}
+  .dec .panel-head{background:var(--dec-head)}
+  .panel-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex-shrink:0}
+  .enc .panel-icon{background:var(--enc-soft);color:var(--enc)}
+  .dec .panel-icon{background:var(--dec-soft);color:var(--dec)}
+  .panel-head h2{font-size:1.02rem;font-weight:700}
+  .panel-head p{font-size:.8rem;color:var(--muted)}
+  .flow{
+    margin-left:auto;font-size:.68rem;font-weight:600;padding:4px 10px;border-radius:999px;
+    font-family:'JetBrains Mono',monospace;white-space:nowrap;
+  }
+  .enc .flow{background:var(--enc-soft);color:var(--enc-dark)}
+  .dec .flow{background:var(--dec-soft);color:var(--dec-dark)}
+
+  .panel-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:15px}
+
+  .field label{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--text-2);
+  }
+  .field label small{font-weight:500;color:var(--muted);font-size:.74rem}
+  .counter{
+    font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:500;
+    padding:1px 8px;border-radius:999px;background:var(--tint);border:1px solid var(--border);color:var(--muted);
+  }
+  .counter.ok{background:var(--ok-soft);border-color:#a9dbb8;color:var(--ok)}
+  .counter.bad{background:var(--danger-soft);border-color:#f0b4b4;color:var(--danger)}
+
+  textarea,input[type=text]{
+    width:100%;font:inherit;font-size:.9rem;color:var(--text);
+    border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;background:var(--field);
+    transition:border-color .15s, box-shadow .15s, background .15s;
+  }
+  textarea{resize:vertical;min-height:100px}
+  .mono{font-family:'JetBrains Mono',monospace!important;font-size:.84rem!important}
+  textarea::placeholder,input::placeholder{color:#8d9bb2}
+  .enc textarea:focus,.enc input:focus{outline:none;background:var(--field-focus);border-color:var(--enc);box-shadow:0 0 0 3px var(--enc-ring)}
+  .dec textarea:focus,.dec input:focus{outline:none;background:var(--field-focus);border-color:var(--dec);box-shadow:0 0 0 3px var(--dec-ring)}
+  .invalid{border-color:var(--danger)!important;box-shadow:0 0 0 3px rgba(198,40,40,.12)!important}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  .actions{display:flex;gap:10px}
+  .btn{
+    font:inherit;font-weight:600;font-size:.9rem;border-radius:9px;cursor:pointer;
+    padding:10px 18px;border:1px solid transparent;display:inline-flex;align-items:center;
+    justify-content:center;gap:8px;transition:background .15s, transform .05s;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-enc{background:var(--enc);color:#fff;flex:1;box-shadow:0 6px 14px -8px rgba(13,148,136,.7)}
+  .btn-enc:hover{background:var(--enc-dark)}
+  .btn-dec{background:var(--dec);color:#fff;flex:1;box-shadow:0 6px 14px -8px rgba(79,70,229,.7)}
+  .btn-dec:hover{background:var(--dec-dark)}
+  .btn-ghost{background:var(--tint);border-color:var(--border-strong);color:var(--text-2)}
+  .btn-ghost:hover{background:#d8e0ec}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+
+  .spinner{
+    width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+    border-radius:50%;animation:spin .7s linear infinite;display:none;
+  }
+  .loading .spinner{display:inline-block}
+  .loading .btn-icon{display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .alert{
+    display:none;padding:9px 12px;border-radius:9px;font-size:.84rem;
+    background:var(--danger-soft);color:#b71c1c;border:1px solid #f0b4b4;
+    align-items:flex-start;gap:8px;
+  }
+  .alert.show{display:flex}
+  .alert svg{flex-shrink:0;margin-top:2px}
+
+  .output{border:1px solid var(--border);border-radius:10px;background:var(--field);overflow:hidden;transition:all .2s}
+  .output-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tint);
+  }
+  .output-head .label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+  .copy{
+    font:inherit;font-size:.76rem;font-weight:600;border:1px solid var(--border-strong);background:var(--field);
+    padding:4px 11px;border-radius:7px;cursor:pointer;color:var(--text-2);display:inline-flex;gap:5px;align-items:center;
+  }
+  .enc .copy:not(:disabled):hover{background:var(--enc-soft);border-color:var(--enc);color:var(--enc-dark)}
+  .dec .copy:not(:disabled):hover{background:var(--dec-soft);border-color:var(--dec);color:var(--dec-dark)}
+  .copy:disabled{opacity:.45;cursor:not-allowed}
+  .output-body{
+    padding:11px 13px;min-height:80px;max-height:200px;overflow:auto;
+    font-family:'JetBrains Mono',monospace;font-size:.84rem;word-break:break-all;white-space:pre-wrap;color:var(--text);
+  }
+  .output-body.placeholder{color:#8d9bb2;font-family:'Inter',sans-serif;font-style:italic}
+  .enc .output.filled{border-color:#8fd0c7;background:#e2f3f1}
+  .dec .output.filled{border-color:#b7baf2;background:#e7e8fb}
+
+  footer{max-width:1140px;margin:0 auto;padding:22px 28px 26px;text-align:center;color:var(--muted);font-size:.78rem}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#e6f4ea;border:1px solid #a9dbb8;color:#14532d;padding:10px 16px;border-radius:10px;
+    font-size:.86rem;font-weight:500;display:flex;align-items:center;gap:8px;
+    box-shadow:0 10px 26px -8px rgba(20,33,61,.3);opacity:0;pointer-events:none;transition:all .25s;z-index:20;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:900px){
+    .settings-grid{grid-template-columns:repeat(3,1fr)}
+    .setting:nth-child(3){border-right:none}
+    .setting:nth-child(-n+3){border-bottom:1px solid var(--border)}
+    main{grid-template-columns:1fr}
+    .tabs{display:flex}
+    .panel{display:none}
+    .panel.active{display:block}
+  }
+  @media (max-width:560px){
+    .nav-inner,.title,.settings,.tabs,main,footer{padding-left:14px;padding-right:14px}
+    .title h1{font-size:1.35rem}
+    .row{grid-template-columns:1fr}
+    .settings-grid{grid-template-columns:1fr 1fr}
+    .setting{border-right:none!important;border-bottom:1px solid var(--border)}
+    .nav-badge,.flow{display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      AES Crypto Tool
+    </div>
+    <div class="nav-badge"><span class="dot"></span>Secure server-side processing</div>
+  </div>
+</nav>
+
+<section class="title">
+  <h1><span>AES Encryption &amp; Decryption</span></h1>
+  <p>Enter your text, Initialization Vector and Secret Key &mdash; all other settings are pre-configured.</p>
+</section>
+
+<section class="settings">
+  <div class="settings-grid">
+    <div class="setting"><div class="k">Algorithm</div><div class="v">AES-128</div></div>
+    <div class="setting"><div class="k">Mode</div><div class="v">CBC</div></div>
+    <div class="setting"><div class="k">Padding</div><div class="v">PKCS5</div></div>
+    <div class="setting"><div class="k">Encrypt Output</div><div class="v">Hex</div></div>
+    <div class="setting"><div class="k">Decrypt Input</div><div class="v">Hex</div></div>
+  </div>
+</section>
+
+<div class="tabs">
+  <button class="tab active" data-target="encPanel">Encrypt</button>
+  <button class="tab" data-target="decPanel">Decrypt</button>
+</div>
+
+<main>
+  <!-- ================= ENCRYPT ================= -->
+  <section class="panel enc active" id="encPanel">
+    <div class="panel-head">
+      <div class="panel-icon">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div>
+        <h2>Encryption</h2>
+        <p>Convert plain text into cipher text</p>
+      </div>
+      <div class="flow">TEXT &rarr; HEX</div>
+    </div>
+
+    <form class="panel-body" id="encForm" autocomplete="off">
+      <div class="field">
+        <label for="encText">Plain Text to Encrypt <small id="encTextCount">0 characters</small></label>
+        <textarea id="encText" placeholder="Type or paste the text you want to encrypt..."></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="encIv">Initialization Vector <span class="counter" id="encIvCount">0/16</span></label>
+          <input type="text" id="encIv" class="mono" maxlength="16" placeholder="Enter 16 characters" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="encKey">Secret Key <span class="counter" id="encKeyCount">0/16</span></label>
+          <input type="text" id="encKey" class="mono" maxlength="16" placeholder="Enter 16 characters" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="alert" id="encError"></div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-enc" id="encBtn">
+          <span class="spinner"></span>
+          <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Encrypt</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="encClear">Clear</button>
+      </div>
+
+      <div class="output" id="encOutBox">
+        <div class="output-head">
+          <span class="label">Encrypted Output &middot; Hex</span>
+          <button type="button" class="copy" id="encCopy" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <div class="output-body placeholder" id="encOutput">Your encrypted text will appear here.</div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ================= DECRYPT ================= -->
+  <section class="panel dec" id="decPanel">
+    <div class="panel-head">
+      <div class="panel-icon">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+      </div>
+      <div>
+        <h2>Decryption</h2>
+        <p>Convert cipher text back into plain text</p>
+      </div>
+      <div class="flow">HEX &rarr; TEXT</div>
+    </div>
+
+    <form class="panel-body" id="decForm" autocomplete="off">
+      <div class="field">
+        <label for="decText">Encrypted Text to Decrypt (Hex) <small id="decTextCount">0 characters</small></label>
+        <textarea id="decText" class="mono" placeholder="Paste the Hex encrypted text, e.g. 36e7ce692d0c206c49..." spellcheck="false"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="decIv">Initialization Vector <span class="counter" id="decIvCount">0/16</span></label>
+          <input type="text" id="decIv" class="mono" maxlength="16" placeholder="Enter 16 characters" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="decKey">Secret Key <span class="counter" id="decKeyCount">0/16</span></label>
+          <input type="text" id="decKey" class="mono" maxlength="16" placeholder="Enter 16 characters" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="alert" id="decError"></div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-dec" id="decBtn">
+          <span class="spinner"></span>
+          <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          <span>Decrypt</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="decClear">Clear</button>
+      </div>
+
+      <div class="output" id="decOutBox">
+        <div class="output-head">
+          <span class="label">Decrypted Output &middot; Plain Text</span>
+          <button type="button" class="copy" id="decCopy" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <div class="output-body placeholder" id="decOutput">Your decrypted text will appear here.</div>
+      </div>
+    </form>
+  </section>
+</main>
+
+<footer>AES-128 &middot; CBC &middot; PKCS5 Padding &middot; Hex input / output</footer>
+
+<div class="toast" id="toast">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10.5 15 8 12.5"/></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const byteLen = s => new TextEncoder().encode(s).length;
+  const ERR_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+
+  // ---------- Live counters ----------
+  function bindCounter(inputId, counterId) {
+    const input = $(inputId), counter = $(counterId);
+    const update = () => {
+      const n = byteLen(input.value);
+      counter.textContent = `${n}/16`;
+      counter.className = 'counter ' + (n === 0 ? '' : n === 16 ? 'ok' : 'bad');
+      input.classList.remove('invalid');
+    };
+    input.addEventListener('input', update);
+    return update;
+  }
+  function bindTextCount(inputId, countId) {
+    const input = $(inputId), count = $(countId);
+    const update = () => {
+      const n = input.value.length;
+      count.textContent = `${n} character${n === 1 ? '' : 's'}`;
+      input.classList.remove('invalid');
+    };
+    input.addEventListener('input', update);
+    return update;
+  }
+  const counters = [
+    bindCounter('encIv','encIvCount'), bindCounter('encKey','encKeyCount'),
+    bindCounter('decIv','decIvCount'), bindCounter('decKey','decKeyCount'),
+    bindTextCount('encText','encTextCount'), bindTextCount('decText','decTextCount'),
+  ];
+
+  // ---------- Toast ----------
+  let toastTimer;
+  function toast(msg) {
+    $('toastMsg').textContent = msg; $('toast').classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 1800);
+  }
+
+  // ---------- Helpers ----------
+  function showError(el, msg) { el.innerHTML = ERR_ICON + '<span></span>'; el.lastChild.textContent = msg; el.classList.add('show'); }
+  function hideError(el) { el.classList.remove('show'); }
+
+  function setOutput(box, outEl, copyBtn, text) {
+    if (text) {
+      outEl.textContent = text; outEl.classList.remove('placeholder');
+      copyBtn.disabled = false; box.classList.add('filled');
+    } else {
+      outEl.textContent = outEl.dataset.placeholder; outEl.classList.add('placeholder');
+      copyBtn.disabled = true; box.classList.remove('filled');
+    }
+  }
+
+  function validate(textEl, ivEl, keyEl, errEl, textLabel) {
+    if (!textEl.value.trim()) {
+      textEl.classList.add('invalid'); showError(errEl, `Please enter the ${textLabel}.`); textEl.focus(); return false;
+    }
+    if (byteLen(ivEl.value) !== 16) {
+      ivEl.classList.add('invalid'); showError(errEl, `Initialization Vector must be exactly 16 characters (currently ${byteLen(ivEl.value)}).`); ivEl.focus(); return false;
+    }
+    if (byteLen(keyEl.value) !== 16) {
+      keyEl.classList.add('invalid'); showError(errEl, `Secret Key must be exactly 16 characters (currently ${byteLen(keyEl.value)}).`); keyEl.focus(); return false;
+    }
+    return true;
+  }
+
+  function setupPanel(cfg) {
+    const form = $(cfg.form), text = $(cfg.text), iv = $(cfg.iv), key = $(cfg.key);
+    const btn = $(cfg.btn), err = $(cfg.err), out = $(cfg.out), box = $(cfg.box);
+    const copy = $(cfg.copy), clear = $(cfg.clear);
+    out.dataset.placeholder = out.textContent;
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      hideError(err);
+      if (!validate(text, iv, key, err, cfg.textLabel)) return;
+
+      btn.disabled = true; btn.classList.add('loading');
+      try {
+        const res = await fetch(cfg.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text.value, iv: iv.value, key: key.value })
+        });
+        const data = await res.json();
+        if (data.success) { setOutput(box, out, copy, data.result); toast(cfg.doneMsg); }
+        else { setOutput(box, out, copy, ''); showError(err, data.error || 'Something went wrong.'); }
+      } catch {
+        setOutput(box, out, copy, ''); showError(err, 'Could not reach the server. Make sure app.py is running.');
+      } finally {
+        btn.disabled = false; btn.classList.remove('loading');
+      }
+    });
+
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(out.textContent); }
+      catch {
+        const r = document.createRange(); r.selectNodeContents(out);
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('copy'); s.removeAllRanges();
+      }
+      toast('Copied to clipboard');
+    });
+
+    clear.addEventListener('click', () => {
+      text.value = ''; iv.value = ''; key.value = '';
+      [text, iv, key].forEach(el => el.classList.remove('invalid'));
+      hideError(err); setOutput(box, out, copy, '');
+      counters.forEach(fn => fn());
+      text.focus();
+    });
+  }
+
+  setupPanel({ form:'encForm', text:'encText', iv:'encIv', key:'encKey', btn:'encBtn', err:'encError',
+               out:'encOutput', box:'encOutBox', copy:'encCopy', clear:'encClear', endpoint:'/api/encrypt',
+               textLabel:'text to encrypt', doneMsg:'Text encrypted successfully' });
+  setupPanel({ form:'decForm', text:'decText', iv:'decIv', key:'decKey', btn:'decBtn', err:'decError',
+               out:'decOutput', box:'decOutBox', copy:'decCopy', clear:'decClear', endpoint:'/api/decrypt',
+               textLabel:'encrypted Hex text', doneMsg:'Text decrypted successfully' });
+
+  // ---------- Mobile tabs ----------
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      $(tab.dataset.target).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
